@@ -53,16 +53,11 @@ let cardContainer = new Container;
 cardContainer.position.set(150, 150);
 
 function onAssetsLoaded(){
-
     //For each card number value
     for (let i = 0; i < 13; i++){
-
         //For each number suit
         for (let j = 0; j < 4; j++){
             
-            /*
-            Need to rename the images and recreate the sprite map for this to work (maybe)
-            */
             let suit;
             switch(j){
                 case 0: suit = 'C';
@@ -76,19 +71,35 @@ function onAssetsLoaded(){
             }
 
             let card = createCard(i+1, suit);
-
-            card.value = i+1;
-            card.suit = suit;
-
             cardArr.push(card);
-            cardContainer.addChild(card);
         }
     }
 
+    shuffle(cardArr);
+    //Add shuffled cards to the container
+    for (let i = 0; i < cardArr.length; i++){
+        cardContainer.addChild(cardArr[i]);
+    }
+
+    //Add container to stage
     app.stage.addChild(cardContainer);
 
     //This updates every 60s, delta is used if you want to update independent of frame rate
     app.ticker.add(delta => gameLoop(delta));
+}
+
+/**
+ * Uses the Fisher-Yates shuffling method to shuffle the deck
+ * @param {*} deck the array of cards
+ */
+function shuffle(deck){
+    //Iterate through deck backwards
+    for (let i = deck.length - 1; i > 0; i--){
+        //Pick a random card before the current card
+        let j = Math.floor(Math.random() * (i+1));
+        //Swap the cards
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
 }
 
 function createCard(value, suit){
@@ -97,8 +108,10 @@ function createCard(value, suit){
     console.log(`${value}${suit} loaded`);
     //Set anchor point to the middle of the card and scale it down
     card.anchor.set(.5, .5);
-    card.scale.set(.25, .25);
+    card.scale.set(.1, .1);
     card.interactive = true;
+    card.value = value;
+    card.suit = suit;
     //Set drag and drop events
     card.on('pointerdown', onDragStart);
     card.on('pointerup', onDragEnd);
@@ -111,6 +124,7 @@ function onDragStart(event){
     this.data = event.data;
     this.alpha = .5;
     this.dragging = true;
+    console.log(`${this.value}${this.suit}`);
 }
 
 function onDragEnd(event){
@@ -123,10 +137,9 @@ function onDragMove(event){
     if (this.dragging){
         let newPos = this.data.getLocalPosition(this.parent);
         this.x = newPos.x;
-        this.y = newPos.y;    
+        this.y = newPos.y;
     }
 }
-
 
 function gameLoop(delta){
 

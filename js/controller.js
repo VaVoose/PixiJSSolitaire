@@ -8,22 +8,19 @@ let Application = PIXI.Application,
     TextureCache = PIXI.utils.TextureCache,
     Container = PIXI.Container;
 
-
-let gameState = play;
-
+//--Just some general stuff-//
 let  type = "WebGL";
 if(!PIXI.utils.isWebGLSupported()){
     type = "canvas"
 }
-
 PIXI.utils.sayHello(type)
+//-------------------------//
+
+let gameState = play;
 
 //Create a new PIXI application
 let app = new Application({
     autoResize: true,
-    
-    //width: 800,
-    //height:800
 });
 
 //add application to browser window
@@ -51,6 +48,11 @@ loader.add("cardSprites", "./images/cards/spritesheet.json").load(onAssetsLoaded
 let cardArr = [];
 let cardContainer = new Container;
 cardContainer.position.set(150, 150);
+
+let cardContainer2 = new Container;
+cardContainer2.position.set(150, 500);
+
+
 
 function onAssetsLoaded(){
     //For each card number value
@@ -81,17 +83,21 @@ function onAssetsLoaded(){
         cardContainer.addChild(cardArr[i]);
     }
 
+    let sampleBack = Sprite.from("yellow_back.png");
+    cardContainer2.addChild(sampleBack);
+    sampleBack.scale.set(.1, .1);
+    sampleBack.interactive = true;
+
     //Add container to stage
     app.stage.addChild(cardContainer);
+    app.stage.addChild(cardContainer2);
 
     //This updates every 60s, delta is used if you want to update independent of frame rate
     app.ticker.add(delta => gameLoop(delta));
 }
 
-/**
- * Uses the Fisher-Yates shuffling method to shuffle the deck
- * @param {*} deck the array of cards
- */
+
+//Uses the Fisher-Yates shuffling method to shuffle the deck
 function shuffle(deck){
     //Iterate through deck backwards
     for (let i = deck.length - 1; i > 0; i--){
@@ -127,12 +133,6 @@ function onDragStart(event){
     console.log(`${this.value}${this.suit}`);
 }
 
-function onDragEnd(event){
-    this.alpha = 1;
-    this.dragging = false;
-    this.data = null;
-}
-
 function onDragMove(event){
     if (this.dragging){
         let newPos = this.data.getLocalPosition(this.parent);
@@ -140,6 +140,21 @@ function onDragMove(event){
         this.y = newPos.y;
     }
 }
+
+function onDragEnd(event){
+    this.alpha = 1;
+    this.dragging = false;
+    //Deactivate the dragging card for container detection
+    this.interactive = false;
+    if (overContainer()){
+        return;
+    }
+    this.interactive = true;
+    this.x = 0;
+    this.y = 0;
+    this.data = null;
+}
+
 
 function gameLoop(delta){
 
@@ -151,6 +166,22 @@ function gameLoop(delta){
 
 function play(){
     //TODO
+    
+}
+
+function overContainer(){
+    //Get mouse position
+    let mousePosition = app.renderer.plugins.interaction.mouse.global;
+    let hit;
+    //If there is a something interactive under the mouse
+    if (hit = app.renderer.plugins.interaction.hitTest(mousePosition)){
+        //If that object is a container
+        if (hit instanceof Container){
+            console.log(`Container was hit`);
+            return hit;
+        }
+    }
+    return false;
 }
 
 

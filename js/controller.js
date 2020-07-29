@@ -13,8 +13,10 @@ let Application = PIXI.Application,
     loader = PIXI.Loader.shared,
     resources = PIXI.Loader.shared.resources,
     Sprite = PIXI.Sprite,
+    Texture = PIXI.Texture,
     TextureCache = PIXI.utils.TextureCache,
-    Container = PIXI.Container;
+    Container = PIXI.Container
+;
 
 class Stock extends Container{
     constructor(){
@@ -114,8 +116,6 @@ function resize() {
   // area, this is more useful than view.width/height because
   // it handles resolution
   // rect.position.set(app.screen.width, app.screen.height);
-
-
 }
 
 resize();
@@ -182,6 +182,7 @@ function onAssetsLoaded(){
 function createCard(value, suit){
     //Create card from value and suit from the spritesheet
     let card = Sprite.from(`${value}${suit}.png`);
+    card.backside = Texture.from("yellow_back.png");
     //console.log(`${value}${suit} loaded`);
     //Set anchor point to the middle of the card and scale it down
     card.anchor.set(.5, .5);
@@ -189,7 +190,8 @@ function createCard(value, suit){
     card.interactive = true;
     card.value = value;
     card.suit = suit;
-    card.facedown = false;
+    card.facedown = true;
+    if (card.facedown) card.texture = card.backside;
     //Set drag and drop events
     card.on('pointerdown', onDragStart);
     card.on('pointerup', onDragEnd);

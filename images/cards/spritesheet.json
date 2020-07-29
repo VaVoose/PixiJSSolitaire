@@ -1100,7 +1100,7 @@
 				"h": 1056
 			}
 		},
-		"purple_back.png": {
+		"placeholder.png": {
 			"frame": {
 				"x": 6230,
 				"y": 1059,
@@ -1120,7 +1120,7 @@
 				"h": 1056
 			}
 		},
-		"red_back.png": {
+		"purple_back.png": {
 			"frame": {
 				"x": 6238,
 				"y": 2117,
@@ -1140,10 +1140,30 @@
 				"h": 1056
 			}
 		},
-		"yellow_back.png": {
+		"red_back.png": {
 			"frame": {
 				"x": 6238,
 				"y": 3175,
+				"w": 691,
+				"h": 1056
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 691,
+				"h": 1056
+			},
+			"sourceSize": {
+				"w": 691,
+				"h": 1056
+			}
+		},
+		"yellow_back.png": {
+			"frame": {
+				"x": 6214,
+				"y": 4233,
 				"w": 691,
 				"h": 1056
 			},

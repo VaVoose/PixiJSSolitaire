@@ -1,5 +1,13 @@
 // https://www.codeandweb.com/free-sprite-sheet-packer
 
+//--Just some general stuff-//
+let  type = "WebGL";
+if(!PIXI.utils.isWebGLSupported()){
+    type = "canvas"
+}
+PIXI.utils.sayHello(type)
+//-------------------------//
+
 //Set Alliases for the PIXI Library
 let Application = PIXI.Application,
     loader = PIXI.Loader.shared,
@@ -9,36 +17,87 @@ let Application = PIXI.Application,
     Container = PIXI.Container;
 
 class Stock extends Container{
-
+    constructor(){
+        super();
+        this.position.set(100, 100);
+        this.interactive = true;
+        this.addChildAt(createPlaceholder(), 0);
+    }
 }
 
 class Talon extends Container{
-
+    constructor(){
+        super();
+        this.position.set(180, 100);
+        this.interactive = true;
+        this.addChildAt(createPlaceholder(), 0);
+    }
 }
 
-class Tableau extends Container{
+class FoundationContainer extends Container{
+    foundations = [];
 
+    constructor(){
+        super();
+        this.position.set(400, 100);
+        this.interactive = false;
+        this.interactiveChildren = true;
+        this._populateFoundation();
+    }
+
+    _populateFoundation(){
+        for(let i = 0; i < 4; i++){
+            let f = new Foundation();
+            this.foundations.push(f);
+            this.addChild(f);
+            f.position.set(80 * i, 0);
+        }
+    }
 }
 
 class Foundation extends Container{
-
+    constructor(){
+        super();
+        this.interactive = true;
+        this.addChildAt(createPlaceholder(), 0);
+    }
 }
 
-//--Just some general stuff-//
-let  type = "WebGL";
-if(!PIXI.utils.isWebGLSupported()){
-    type = "canvas"
-}
-PIXI.utils.sayHello(type)
-//-------------------------//
+class TableauContainer extends Container{
+    tableaus = [];
 
+    constructor(){
+        super();
+        this.position.set(100, 500);
+        this.interactive = false;
+        this.interactiveChildren = true;
+        this._populateFoundation();
+    }
+
+    _populateFoundation(){
+        for (let i = 0; i < 7; i++){
+            let t = new Tableau;
+            this.tableaus.push(t);
+            this.addChild(t);
+            t.position.set(i * 90, 0)
+        }
+    }
+}
+
+class Tableau extends Container{
+    constructor(){
+        super();
+        this.interactive = true;
+        this.addChildAt(createPlaceholder(), 0);
+    }
+}
 
 let gameState = play;
-let selectedContainer;
 
 //Create a new PIXI application
 let app = new Application({
     autoResize: true,
+    backgroundColor: 0X7646C1
 });
 
 //add application to browser window
@@ -61,47 +120,26 @@ function resize() {
 
 resize();
 
-//Loads a spritesheet, each sprite in the sheet has the name it was assigned in the spritesheet generator (file name)
-//Then calls setup function once all loaded
-
 
 let cardArr = [];
-let stock = new Stock;
-stock.position.set(150, 150);
-stock.interactive = true;
-/*
-stock.on("pointerover", e = (event) => {
-    selectedContainer = (event.target).parent;
-    console.log("over stock", selectedContainer);
-});
-
-stock.on("pointerout", e = (event) => {
-    selectedContainer = null;
-    console.log("out stock", selectedContainer);
-});
-*/
-let stock2 = new Talon;
-stock2.position.set(150, 500);
-stock2.interactive = true;
-/*
-stock2.on("pointerover", e = (event) => {
-    selectedContainer = (event.target).parent;
-    console.log("over talon", selectedContainer);
-});
-
-stock2.on("pointerout", e = (event) => {
-    selectedContainer = null;
-    console.log("out talon", selectedContainer);
-});
-//stock2.interactiveChildren = false;
-*/
+let stock;
+let talon;
+let foundationContainer;
+let tableauContainer;
 let draggingContainer = new Container;
 draggingContainer.interactive = false;
 
-
+//Loads a spritesheet, each sprite in the sheet has the name it was assigned in the spritesheet generator (file name)
+//Then calls setup function once all loaded
 loader.add("cardSprites", "./images/cards/spritesheet.json").load(onAssetsLoaded);
 
 function onAssetsLoaded(){
+    //Instantiate the containers
+    stock = new Stock;
+    talon = new Talon;
+    foundationContainer = new FoundationContainer;
+    tableauContainer = new TableauContainer;
+
     //For each card number value
     for (let i = 0; i < 13; i++){
         //For each number suit
@@ -118,32 +156,24 @@ function onAssetsLoaded(){
                 case 3: suit = 'S';
                     break;
             }
-
             let card = createCard(i+1, suit);
             cardArr.push(card);
         }
     }
 
     shuffle(cardArr);
-    //Add shuffled cards to the container
+
     for (let i = 0; i < cardArr.length; i++){
         stock.addChild(cardArr[i]);
     }
 
-    //Sample container for testing
-    let sampleBack = Sprite.from("yellow_back.png");
-    stock2.addChild(sampleBack);
-    sampleBack.anchor.set(.5, .5);
-    sampleBack.scale.set(.1, .1);
-    sampleBack.interactive = true;
-
-    //Add container to stage
-    
+    //Add playing containers to stage
     app.stage.addChild(stock);
-    app.stage.addChild(stock2);
-    
+    app.stage.addChild(talon);
+    app.stage.addChild(foundationContainer);
+    app.stage.addChild(tableauContainer);
     app.stage.addChild(draggingContainer);
-    app.stage.setChildIndex(draggingContainer, 2);
+    app.stage.setChildIndex(draggingContainer, app.stage.children.length - 1);
 
     //This updates every 60s, delta is used if you want to update independent of frame rate
     app.ticker.add(delta => gameLoop(delta));
@@ -159,12 +189,20 @@ function createCard(value, suit){
     card.interactive = true;
     card.value = value;
     card.suit = suit;
+    card.facedown = false;
     //Set drag and drop events
     card.on('pointerdown', onDragStart);
     card.on('pointerup', onDragEnd);
     card.on('pointermove', onDragMove);
-    //card.on('pointerupoutside', onDragEnd);
     return card;
+}
+
+function createPlaceholder(){
+    let placeholder = Sprite.from("placeholder.png");
+    placeholder.anchor.set(.5, .5);
+    placeholder.scale.set(.1, .1);
+    placeholder.interactive = true;
+    return placeholder;
 }
 
 //Uses the Fisher-Yates shuffling method to shuffle the deck
@@ -210,7 +248,7 @@ function onDragEnd(event){
     this.interactive = false;
 
     let targetContainer = overContainer();
-    //If there is a target container
+    //If there was a container collision
     if (targetContainer){
         targetContainer.addChild(this);
         this.interactive = true;
@@ -232,11 +270,10 @@ function onDragEnd(event){
 }
 
 function debug() {
-    console.log("");
     console.log(stock.children);
-    console.log(stock2.children);
+    console.log(talon.children);
     console.log(app.stage.getChildIndex(stock));
-    console.log(app.stage.getChildIndex(stock2));
+    console.log(app.stage.getChildIndex(talon));
 }
 
 // Checks to see what container the card is over and if its over a continer return the container
@@ -245,7 +282,7 @@ function overContainer(){
     let mousePosition = app.renderer.plugins.interaction.mouse.global;
     let hit = app.renderer.plugins.interaction.hitTest(mousePosition);
     //console.log("This is hit", hit);
-    if(!hit) return;
+    if(!hit) return; //If nothing was hit
     //Get the container of the interactive sprite
     if (hit.isSprite) hit = hit.parent;
     //console.log("This is hit parent", hit);
@@ -262,7 +299,6 @@ function overContainer(){
     */
 }
 
-
 function gameLoop(delta){
 
     //Update current gamestate if needed
@@ -275,7 +311,4 @@ function play(){
     //TODO
     
 }
-
-
-
 

@@ -24,15 +24,75 @@ class Stock extends Container{
         this.position.set(100, 100);
         this.interactive = true;
         this.addChildAt(createPlaceholder(), 0);
+        this.on('click', this.dealCards);
     }
+
+    dealCards(){
+        talon.dealCards();
+    }
+
+    returnCards(){
+        let talonAmt = talon.children.length - 1;
+        for (let i = 0; i < talonAmt; i++){
+            this.addChild(talon.getChildAt(talonAmt - i));
+        }
+    }
+
+    
 }
 
 class Talon extends Container{
+
     constructor(){
         super();
         this.position.set(180, 100);
         this.interactive = true;
         this.addChildAt(createPlaceholder(), 0);
+    }
+
+    dealCards(){
+        //This is kinda brute force but it moves all the cards that are currently in it to the neutral position
+        let cardsInTalon = this.children;
+        for (let card of cardsInTalon){
+            card.position.set(0,0);
+        }
+
+        let stockAmt = stock.children.length - 1;
+        if (stockAmt == 0){
+            stock.returnCards();
+            return;
+        }
+
+        //Grabs 3 cards from the stock and lays them out
+        for (let i = 0; i < 3; i++){
+            stockAmt = stock.children.length - 1;
+            if (stockAmt > 0){
+                this.addChild(stock.getChildAt(stockAmt)).position.set(20 * i, 0);
+            }
+        }
+    }
+
+    // This is scuffed badly
+    onChildrenChange(){
+
+        /*
+        //Get number of cards
+        let numChildren = this.children.length-1;
+        //If its the placeholder card dont offset
+        if (numChildren == 0){
+            return;
+        }
+        //Move the previous 3 cards to the neutral position
+        if (numChildren > 3){
+            for (let i = 0; i < 3; i++){
+                this.getChildAt(numChildren-i).position.set(0, 0);
+            }
+        }
+        //Stagger the new cards on the talon
+        let offset = (numChildren - 1) % 3;
+        console.log(offset);
+        this.getChildAt(numChildren).position.set(20 * offset, 0);
+        */
     }
 }
 
@@ -70,7 +130,7 @@ class TableauContainer extends Container{
 
     constructor(){
         super();
-        this.position.set(100, 500);
+        this.position.set(100, 250);
         this.interactive = false;
         this.interactiveChildren = true;
         this._populateFoundation();
@@ -190,12 +250,13 @@ function createCard(value, suit){
     card.interactive = true;
     card.value = value;
     card.suit = suit;
-    card.facedown = true;
+    card.facedown = false;
     if (card.facedown) card.texture = card.backside;
     //Set drag and drop events
     card.on('pointerdown', onDragStart);
     card.on('pointerup', onDragEnd);
     card.on('pointermove', onDragMove);
+    //card.on('click', dealCards);
     return card;
 }
 
@@ -217,57 +278,77 @@ function shuffle(deck){
         [deck[i], deck[j]] = [deck[j], deck[i]];
     }
 }
+/*
+function dealCards(){
+    console.log("Click happened");
+    currentPile = this.parent;
+    if (currentPile == stock){
+        for (let i = 0; i < 3; i++){
+            //If there is a card in the stock
+            if (stock.children.length > 1){
+                talon.addChild(stock.getChildAt(stock.children.length - 1));
+            }
+        }
+    }
+}
+*/
 
 //Add the card to dragging container so it on top of all other things on screen
 function onDragStart(event){
-    this.data = event.data;
-    this.alpha = .5;
-    this.dragging = true;
-    //Get the starting position of the drag
-    let startPos = this.getGlobalPosition();
-    //Set the dragging container position to the cards position so the card doesn't jerk positions around
-    draggingContainer.position.set(startPos.x, startPos.y);
-    this.originalContainer = this.parent;
-    draggingContainer.addChild(this);
-    //this.parent = this.parent.parent;
-    console.log(`${this.value}${this.suit}`);
+    if (this.parent != stock){
+        this.data = event.data;
+        this.alpha = .5;
+        this.dragging = true;
+        //Get the starting position of the drag
+        let startPos = this.getGlobalPosition();
+        //Set the dragging container position to the cards position so the card doesn't jerk positions around
+        draggingContainer.position.set(startPos.x, startPos.y);
+        this.originalContainer = this.parent;
+        draggingContainer.addChild(this);
+        //this.parent = this.parent.parent;
+        console.log(`${this.value}${this.suit}`);
+    }
 }
 
 //Have the card follow the mouse cursor
 function onDragMove(event){
-    if (this.dragging){
-        let newPos = this.data.getLocalPosition(this.parent);
-        this.x = newPos.x;
-        this.y = newPos.y;
+    if (this.parent != stock){
+        if (this.dragging){
+            let newPos = this.data.getLocalPosition(this.parent);
+            this.x = newPos.x;
+            this.y = newPos.y;
+        }
     }
 }
 
 function onDragEnd(event){
-    this.alpha = 1;
-    this.dragging = false;
-    //Temporarily deactivate the dragging card for container detection
-    app.stage.addChild(this);
-    this.interactive = false;
+    if (this.parent != stock){
+        this.alpha = 1;
+        this.dragging = false;
+        //Temporarily deactivate the dragging card for container detection
+        app.stage.addChild(this);
+        this.interactive = false;
 
-    let targetContainer = overContainer();
-    //If there was a container collision
-    if (targetContainer){
-        targetContainer.addChild(this);
-        this.interactive = true;
-        this.x = 0;
-        this.y = 0;
-        this.data = null;
-        debug();
-        return;
-    }
-    else{
-        let ogParent = this.originalContainer;
-        ogParent.addChild(this);
-        this.interactive = true;
-        this.x = 0;
-        this.y = 0;
-        this.data = null;
-        debug();
+        let targetContainer = overContainer();
+        //If there was a container collision
+        if (targetContainer){
+            targetContainer.addChild(this);
+            this.interactive = true;
+            this.x = 0;
+            this.y = 0;
+            this.data = null;
+            debug();
+            return;
+        }
+        else{
+            let ogParent = this.originalContainer;
+            ogParent.addChild(this);
+            this.interactive = true;
+            this.x = 0;
+            this.y = 0;
+            this.data = null;
+            debug();
+        }
     }
 }
 

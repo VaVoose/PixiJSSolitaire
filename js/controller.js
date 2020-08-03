@@ -37,17 +37,17 @@ class Stock extends Container{
             this.addChild(talon.getChildAt(talonAmt - i));
         }
     }
-
-    
 }
 
 class Talon extends Container{
+    currentlyInTalon;
 
     constructor(){
         super();
         this.position.set(180, 100);
         this.interactive = true;
         this.addChildAt(createPlaceholder(), 0);
+        this.currentlyInTalon = 0;
     }
 
     dealCards(){
@@ -74,25 +74,7 @@ class Talon extends Container{
 
     // This is scuffed badly
     onChildrenChange(){
-
-        /*
-        //Get number of cards
-        let numChildren = this.children.length-1;
-        //If its the placeholder card dont offset
-        if (numChildren == 0){
-            return;
-        }
-        //Move the previous 3 cards to the neutral position
-        if (numChildren > 3){
-            for (let i = 0; i < 3; i++){
-                this.getChildAt(numChildren-i).position.set(0, 0);
-            }
-        }
-        //Stagger the new cards on the talon
-        let offset = (numChildren - 1) % 3;
-        console.log(offset);
-        this.getChildAt(numChildren).position.set(20 * offset, 0);
-        */
+        
     }
 }
 
@@ -133,10 +115,10 @@ class TableauContainer extends Container{
         this.position.set(100, 250);
         this.interactive = false;
         this.interactiveChildren = true;
-        this._populateFoundation();
+        this._populateTableau();
     }
 
-    _populateFoundation(){
+    _populateTableau(){
         for (let i = 0; i < 7; i++){
             let t = new Tableau;
             this.tableaus.push(t);
@@ -179,7 +161,6 @@ function resize() {
 }
 
 resize();
-
 
 let cardArr = [];
 let stock;
@@ -256,6 +237,7 @@ function createCard(value, suit){
     card.on('pointerdown', onDragStart);
     card.on('pointerup', onDragEnd);
     card.on('pointermove', onDragMove);
+    card.on('added', onCardAddedToStack);
     //card.on('click', dealCards);
     return card;
 }
@@ -293,9 +275,14 @@ function dealCards(){
 }
 */
 
+function onCardAddedToStack(event){
+    //let 
+}
+
 //Add the card to dragging container so it on top of all other things on screen
 function onDragStart(event){
-    if (this.parent != stock){
+    this.originalContainer = this.parent;
+    if (this.originalContainer != stock){
         this.data = event.data;
         this.alpha = .5;
         this.dragging = true;
@@ -303,7 +290,6 @@ function onDragStart(event){
         let startPos = this.getGlobalPosition();
         //Set the dragging container position to the cards position so the card doesn't jerk positions around
         draggingContainer.position.set(startPos.x, startPos.y);
-        this.originalContainer = this.parent;
         draggingContainer.addChild(this);
         //this.parent = this.parent.parent;
         console.log(`${this.value}${this.suit}`);

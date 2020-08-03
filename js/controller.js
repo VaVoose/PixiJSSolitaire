@@ -40,7 +40,6 @@ class Stock extends Container{
 }
 
 class Talon extends Container{
-    currentlyInTalon;
 
     constructor(){
         super();
@@ -79,13 +78,13 @@ class Talon extends Container{
 }
 
 class FoundationContainer extends Container{
-    foundations = [];
 
     constructor(){
         super();
         this.position.set(400, 100);
         this.interactive = false;
         this.interactiveChildren = true;
+        this.foundations = [];
         this._populateFoundation();
     }
 
@@ -108,13 +107,13 @@ class Foundation extends Container{
 }
 
 class TableauContainer extends Container{
-    tableaus = [];
 
     constructor(){
         super();
         this.position.set(100, 250);
         this.interactive = false;
         this.interactiveChildren = true;
+        this.tableaus = [];
         this._populateTableau();
     }
 

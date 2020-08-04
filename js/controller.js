@@ -18,7 +18,11 @@ let Application = PIXI.Application,
     Container = PIXI.Container
 ;
 
-class Stock extends Container{
+class CardStack extends Container {
+    cardAdded(card){}
+}
+
+class Stock extends CardStack{
     constructor(){
         super();
         this.position.set(100, 100);
@@ -37,9 +41,13 @@ class Stock extends Container{
             this.addChild(talon.getChildAt(talonAmt - i));
         }
     }
+
+    cardAdded(card){
+        card.texture = card.backside;
+    }
 }
 
-class Talon extends Container{
+class Talon extends CardStack{
 
     constructor(){
         super();
@@ -71,9 +79,8 @@ class Talon extends Container{
         }
     }
 
-    // This is scuffed badly
-    onChildrenChange(){
-        
+    cardAdded(card){
+        card.texture = card.frontside;
     }
 }
 
@@ -98,11 +105,16 @@ class FoundationContainer extends Container{
     }
 }
 
-class Foundation extends Container{
+class Foundation extends CardStack{
     constructor(){
         super();
         this.interactive = true;
         this.addChildAt(createPlaceholder(), 0);
+        this.numCards = -1;
+    }
+
+    onChildrenChange(){
+
     }
 }
 
@@ -127,11 +139,46 @@ class TableauContainer extends Container{
     }
 }
 
-class Tableau extends Container{
+class Tableau extends CardStack{
     constructor(){
         super();
         this.interactive = true;
         this.addChildAt(createPlaceholder(), 0);
+        this.numCards = 0;
+    }
+
+    cardAdded(card){
+        console.log("This fired")
+        card.position.set(0, 300);
+        this.numCards++;
+    }
+
+    //This occurs after the change has happened
+    onChildrenChange(){
+        let currentLength = this.children.length - 1;
+        //If the placeholder is being added, do nothing
+        if (currentLength == 0){
+            console.log("this is the placeholder");
+            return;
+        }
+        /*
+        //A card was added
+        if (currentLength > this.numCards){
+            console.log("card was added");
+            let newestChild = this.getChildAt(currentLength);
+            newestChild.setTransform(0, 300);
+            console.log(newestChild);
+            this.numCards++;
+            return;
+        }
+        */
+        //A card was removed
+        if (currentLength < this.numCards){
+            console.log("card was removed")
+            this.numCards--;
+            return;
+        }
+        //console.log("this should not fire");
     }
 }
 
@@ -166,7 +213,7 @@ let stock;
 let talon;
 let foundationContainer;
 let tableauContainer;
-let draggingContainer = new Container;
+let draggingContainer = new CardStack;
 draggingContainer.interactive = false;
 
 //Loads a spritesheet, each sprite in the sheet has the name it was assigned in the spritesheet generator (file name)
@@ -222,6 +269,7 @@ function onAssetsLoaded(){
 function createCard(value, suit){
     //Create card from value and suit from the spritesheet
     let card = Sprite.from(`${value}${suit}.png`);
+    card.frontside = Texture.from(`${value}${suit}.png`)
     card.backside = Texture.from("yellow_back.png");
     //console.log(`${value}${suit} loaded`);
     //Set anchor point to the middle of the card and scale it down
@@ -259,23 +307,10 @@ function shuffle(deck){
         [deck[i], deck[j]] = [deck[j], deck[i]];
     }
 }
-/*
-function dealCards(){
-    console.log("Click happened");
-    currentPile = this.parent;
-    if (currentPile == stock){
-        for (let i = 0; i < 3; i++){
-            //If there is a card in the stock
-            if (stock.children.length > 1){
-                talon.addChild(stock.getChildAt(stock.children.length - 1));
-            }
-        }
-    }
-}
-*/
 
 function onCardAddedToStack(event){
-    //let 
+    let newStack = this.parent;
+    newStack.cardAdded(this);
 }
 
 //Add the card to dragging container so it on top of all other things on screen
@@ -311,7 +346,7 @@ function onDragEnd(event){
         this.alpha = 1;
         this.dragging = false;
         //Temporarily deactivate the dragging card for container detection
-        app.stage.addChild(this);
+        //app.stage.addChild(this);
         this.interactive = false;
 
         let targetContainer = overContainer();
@@ -338,10 +373,12 @@ function onDragEnd(event){
 }
 
 function debug() {
+    /*
     console.log(stock.children);
     console.log(talon.children);
     console.log(app.stage.getChildIndex(stock));
     console.log(app.stage.getChildIndex(talon));
+    */
 }
 
 // Checks to see what container the card is over and if its over a continer return the container
